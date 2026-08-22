@@ -16,7 +16,7 @@ import { savePrices, type SavePricesResult } from "./actions";
 // world: category blocks reuse the login form's ruled-row field, the save
 // button reuses its strawberry primary button, and the "already launched"
 // indicator reuses recent-days-list's Lançado/Sem-lançamento vocabulary
-// (chalk-subtitle + Check vs board-error text) — none of that repeats here
+// (chalk-subtitle + Check vs chalk-placeholder text) — none of that repeats here
 // as decoration, it is the one component grammar this surface already owns.
 
 const CURRENCY_FORMATTER = new Intl.NumberFormat("pt-BR", {
@@ -37,7 +37,10 @@ function slugify(categoria: StrawberryCategory): string {
 }
 
 function toFieldValue(value: number | undefined): string {
-  return value === undefined ? "" : String(value);
+  // pt-BR convention: two decimal places, comma as the separator (e.g.
+  // "8,50" rather than "8.5"), matching what parsePrice below accepts back
+  // in and what a pt-BR phone keyboard types.
+  return value === undefined ? "" : value.toFixed(2).replace(".", ",");
 }
 
 function buildFieldsState(
@@ -56,7 +59,10 @@ function buildFieldsState(
 function parsePrice(raw: string): number | undefined {
   const trimmed = raw.trim();
   if (trimmed === "") return undefined;
-  const parsed = Number(trimmed);
+  // A pt-BR phone keyboard's decimal key types "," not ".", so accept a
+  // comma decimal separator here (e.g. "8,50") before parsing.
+  const normalized = trimmed.replace(",", ".");
+  const parsed = Number(normalized);
   return Number.isNaN(parsed) ? undefined : parsed;
 }
 
@@ -153,6 +159,8 @@ export function StrawberryPriceForm({
             const slug = slugify(categoria);
             const minId = `${idBase}-${slug}-min`;
             const maxId = `${idBase}-${slug}-max`;
+            const categoryError =
+              result?.status === "validation-error" ? result.fieldErrors?.[categoria] : undefined;
 
             return (
               <div
@@ -166,7 +174,7 @@ export function StrawberryPriceForm({
                   <span
                     className={cn(
                       "flex shrink-0 items-center gap-1.5 text-xs font-bold tracking-[0.1em] uppercase",
-                      isLaunched ? "text-chalk-subtitle" : "text-board-error"
+                      isLaunched ? "text-chalk-subtitle" : "text-chalk-placeholder"
                     )}
                   >
                     {isLaunched ? (
@@ -190,10 +198,8 @@ export function StrawberryPriceForm({
                     </label>
                     <input
                       id={minId}
-                      type="number"
+                      type="text"
                       inputMode="decimal"
-                      step="0.01"
-                      min="0"
                       disabled={isPending}
                       value={fields[categoria].precoMin}
                       onChange={(event) => updateField(categoria, "precoMin", event.target.value)}
@@ -211,10 +217,8 @@ export function StrawberryPriceForm({
                     </label>
                     <input
                       id={maxId}
-                      type="number"
+                      type="text"
                       inputMode="decimal"
-                      step="0.01"
-                      min="0"
                       disabled={isPending}
                       value={fields[categoria].precoMax}
                       onChange={(event) => updateField(categoria, "precoMax", event.target.value)}
@@ -223,6 +227,15 @@ export function StrawberryPriceForm({
                     />
                   </div>
                 </div>
+
+                {categoryError ? (
+                  <p
+                    role="alert"
+                    className="relative pt-3 text-sm text-board-error before:absolute before:top-0 before:left-0 before:h-[2px] before:w-10 before:-rotate-2 before:bg-board-error before:content-['']"
+                  >
+                    {categoryError}
+                  </p>
+                ) : null}
               </div>
             );
           })}

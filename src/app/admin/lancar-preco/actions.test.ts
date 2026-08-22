@@ -16,6 +16,10 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
+}));
+
 import { savePrices } from "./actions";
 
 function emptyPrecos(): StrawberryPriceFormValues["precos"] {
@@ -35,9 +39,8 @@ function selectExistingBuilder(result: { data: unknown; error: unknown }) {
 }
 
 function upsertBuilder(result: { error: unknown }) {
-  return {
-    upsert: vi.fn().mockResolvedValue(result),
-  };
+  const upsert = vi.fn().mockResolvedValue(result);
+  return { builder: { upsert }, upsert };
 }
 
 describe("savePrices", () => {
@@ -57,7 +60,7 @@ describe("savePrices", () => {
     expect(fromMock).not.toHaveBeenCalled();
   });
 
-  it("returns a validation error when preco_max is below preco_min", async () => {
+  it("returns a validation error when preco_max is below preco_min, naming the category", async () => {
     const input: StrawberryPriceFormValues = {
       data: "2026-08-21",
       precos: { ...emptyPrecos(), Bom: { precoMin: 10, precoMax: 5 } },
@@ -66,12 +69,17 @@ describe("savePrices", () => {
     const result = await savePrices(null, input);
 
     expect(result.status).toBe("validation-error");
+    if (result.status !== "validation-error") throw new Error("expected validation-error");
+    expect(result.fieldErrors).toEqual({
+      Bom: "O preço máximo não pode ser menor que o mínimo.",
+    });
   });
 
-  it("upserts a filled category and marks it as new when no row exists", async () => {
+  it("upserts a filled category with the right payload and marks it as new when no row exists", async () => {
+    const { builder, upsert } = upsertBuilder({ error: null });
     fromMock
       .mockReturnValueOnce(selectExistingBuilder({ data: [], error: null }))
-      .mockReturnValueOnce(upsertBuilder({ error: null }));
+      .mockReturnValueOnce(builder);
 
     const input: StrawberryPriceFormValues = {
       data: "2026-08-21",
@@ -85,14 +93,28 @@ describe("savePrices", () => {
       savedAt: expect.any(String),
       entries: [{ categoria: "Bom", precoMin: 8, precoMax: 10, wasUpdate: false }],
     });
+
+    expect(upsert).toHaveBeenCalledWith(
+      [
+        {
+          data: "2026-08-21",
+          categoria: "Bom",
+          preco_min: 8,
+          preco_max: 10,
+          lancado_por: "user-1",
+        },
+      ],
+      { onConflict: "data,categoria" }
+    );
   });
 
   it("marks a category as an update when a row already exists for that date", async () => {
+    const { builder } = upsertBuilder({ error: null });
     fromMock
       .mockReturnValueOnce(
         selectExistingBuilder({ data: [{ categoria: "Bom" }], error: null })
       )
-      .mockReturnValueOnce(upsertBuilder({ error: null }));
+      .mockReturnValueOnce(builder);
 
     const input: StrawberryPriceFormValues = {
       data: "2026-08-21",
@@ -106,9 +128,10 @@ describe("savePrices", () => {
   });
 
   it("returns an error status when the upsert fails", async () => {
+    const { builder } = upsertBuilder({ error: { message: "boom" } });
     fromMock
       .mockReturnValueOnce(selectExistingBuilder({ data: [], error: null }))
-      .mockReturnValueOnce(upsertBuilder({ error: { message: "boom" } }));
+      .mockReturnValueOnce(builder);
 
     const input: StrawberryPriceFormValues = {
       data: "2026-08-21",

@@ -18,6 +18,20 @@ create table precos_morango (
 -- and this speeds up joins/filters on who launched a price entry.
 create index precos_morango_lancado_por_idx on precos_morango (lancado_por);
 
+create function set_atualizado_em()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.atualizado_em = now();
+  return new;
+end;
+$$;
+
+create trigger precos_morango_set_atualizado_em
+  before update on precos_morango
+  for each row execute function set_atualizado_em();
+
 create type user_role as enum ('admin', 'operador');
 
 create table profiles (
