@@ -71,6 +71,11 @@ Fields are ruled rows, not boxes — there is no card chrome anywhere in this
 system yet. The tone is quiet and trustworthy, never playful: this is a record
 of truth for a pricing decision, not a marketing surface.
 
+The system now spans more than login: the admin shell (`/admin/lancar-preco`),
+the recent-days list, and the daily price form all follow the same board —
+same ground, same rule-underlined fields, same one accent — so nothing below
+should be read as login-only.
+
 The board's material is authored, not implied: a low-opacity fractal-noise
 grain sits under the content so the ground reads as a painted, textured
 surface rather than a flat color standing in for one.
@@ -97,7 +102,7 @@ A single dark neutral ground with one warm accent, spent only where the user mus
 - **Chalk Placeholder** (`oklch(0.55 0.02 165)`): input placeholder text.
 - **Board Rule** (`oklch(0.42 0.02 165)`): the hairline underline beneath each field at rest.
 - **Strawberry Foreground** (`oklch(0.99 0 0)`): text on the accent button.
-- **Board Error** (`oklch(0.74 0.19 25)`): a lighter tint off the strawberry hue, reserved for the inline error message and its correction rule — legible as body text against the dark ground, distinct from the button's darker, more saturated strawberry.
+- **Board Error** (`oklch(0.74 0.19 25)`): a lighter tint off the strawberry hue, reserved strictly for actual error states (a failed save, a validation problem) and their correction rule — legible as body text against the dark ground, distinct from the button's darker, more saturated strawberry. It is never used for a normal "not yet entered" state (e.g. "Sem lançamento" on a day or category with no price yet) — that is expected, not broken, and uses Chalk Placeholder instead across the recent-days list and the price form.
 
 ### Named Rules
 **The One Accent Rule.** Strawberry red appears in exactly two places: the primary button and a focused field's rule. It never decorates a label, a link, or a passive element — its rarity is what makes it read as "actionable" on a screen with almost no other color.
@@ -154,6 +159,7 @@ Everything is rectangular with hard corners — no `border-radius` is used anywh
 - **Do** underline fields with a single rule instead of boxing them; a boxed input is a different, unbuilt system.
 - **Do** keep every corner square; a rounded element on this surface is a foreign material.
 - **Do** show errors inline, in place, in sentence case with the recovery implied — never as a floating toast or modal.
+- **Do** reserve Board Error for actual error states; use Chalk Placeholder for a normal "nothing entered yet" state (e.g. "Sem lançamento").
 
 ### Don't:
 - **Don't** introduce a second display font. Character comes from Geist's own weight/case/tracking (The One Face Rule).

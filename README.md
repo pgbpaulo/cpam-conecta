@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CPAM Conecta
 
-## Getting Started
+Painel interno do Ceasinha do Morango (Bom Repouso/MG) para lançar o preço
+diário da caixa de morango por categoria. Next.js (App Router) + Supabase.
 
-First, run the development server:
+## Rodando localmente
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra [http://localhost:3000](http://localhost:3000). A rota raiz redireciona
+para `/admin/lancar-preco`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Outros comandos úteis:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run test    # roda a suíte de testes (Vitest)
+npm run build   # build de produção
+npm run lint    # lint (ESLint)
+```
 
-## Learn More
+## Configuração do Supabase (manual, feita uma vez)
 
-To learn more about Next.js, take a look at the following resources:
+Este projeto usa Supabase para autenticação e banco de dados (Postgres). Não
+há automação de provisionamento — os passos abaixo são feitos manualmente no
+painel do Supabase.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Crie um projeto no Supabase** em [supabase.com](https://supabase.com).
+2. **Rode a migração**: abra o SQL Editor do projeto e execute o conteúdo de
+   `supabase/migrations/0001_create_precos_morango.sql`. Isso cria a tabela
+   `precos_morango`, a tabela `profiles`, os triggers e as políticas de RLS.
+3. **Crie os usuários de autenticação**: no painel Supabase, em
+   Authentication → Users, crie manualmente as contas (e-mail/senha) de quem
+   vai usar o sistema (owner e operador). A criação de um usuário dispara o
+   trigger `handle_new_user`, que cria automaticamente a linha correspondente
+   em `profiles` com `role = 'operador'`.
+4. **Promova a conta do owner a admin**: no SQL Editor, rode:
+   ```sql
+   update profiles set role = 'admin' where id = '<uuid-do-usuário>';
+   ```
+   (o UUID aparece na lista de usuários em Authentication → Users).
+5. **Configure as variáveis de ambiente**: copie `.env.local.example` para
+   `.env.local` e preencha `NEXT_PUBLIC_SUPABASE_URL` e
+   `NEXT_PUBLIC_SUPABASE_ANON_KEY` com os valores em Project Settings → API
+   do painel Supabase.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cp .env.local.example .env.local
+```
