@@ -23,27 +23,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="pt-BR"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        {/*
-          Direction contract lives in the emitted HTML (not this JSX comment,
-          which the compiler strips) via the hidden node immediately below.
-        */}
-        <div
-          aria-hidden
-          style={{ display: "contents" }}
-          dangerouslySetInnerHTML={{
-            __html: `<!--
-THESIS: Login as the first chalked row on the entreposto's price board, refusing the templated centered white auth card with logo.
-OWN-WORLD: Matte near-black slate-green board, warm chalk-white type, one strawberry-red accent; bold tracked caps for labels, chalk-rule underlines for fields, no boxed inputs.
-STORY: The employee or owner recognizes their own board, trusts it as the internal record system, and signs in fast on a slow connection.
-FIRST VIEWPORT: One centered panel on the dark board, no chrome; wordmark, email/senha rows with chalk-rule underlines, one accent button "Entrar"; an error surfaces inline as a struck correction line, never a toast.
-FORM: Quadro de precos do entreposto (#3 of 7, own grounded list); seed key 78fcad81.
-FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
--->`,
-          }}
-        />
-        {children}
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

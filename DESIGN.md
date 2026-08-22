@@ -12,6 +12,7 @@ colors:
   strawberry-hover: "oklch(0.57 0.19 25)"
   strawberry-focus: "oklch(0.62 0.19 20)"
   strawberry-foreground: "oklch(0.99 0 0)"
+  board-error: "oklch(0.74 0.19 25)"
 typography:
   label:
     fontFamily: "Geist, system-ui, sans-serif"
@@ -39,6 +40,20 @@ components:
   button-primary-hover:
     backgroundColor: "{colors.strawberry-hover}"
 ---
+
+<!--
+DIRECTION CONTRACT (login surface, established here; a durable audit record,
+not something shipped to the browser — it previously lived as an injected
+comment in the root layout's DOM, which was wrong because it rendered on
+every route, not just the one it describes; it lives only here now):
+
+THESIS: Login as the first chalked row on the entreposto's price board, refusing the templated centered white auth card with logo.
+OWN-WORLD: Matte near-black slate-green board, warm chalk-white type, one strawberry-red accent; bold tracked caps for labels, chalk-rule underlines for fields, no boxed inputs.
+STORY: The employee or owner recognizes their own board, trusts it as the internal record system, and signs in fast on a slow connection.
+FIRST VIEWPORT: One centered panel on the dark board, no chrome; wordmark, email/senha rows with chalk-rule underlines, one accent button "Entrar"; an error surfaces inline as a struck correction line, never a toast.
+FORM: Quadro de precos do entreposto (#3 of 7, own grounded list); seed key 78fcad81.
+FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
+-->
 
 # Design System: CPAM Conecta
 
@@ -82,6 +97,7 @@ A single dark neutral ground with one warm accent, spent only where the user mus
 - **Chalk Placeholder** (`oklch(0.55 0.02 165)`): input placeholder text.
 - **Board Rule** (`oklch(0.42 0.02 165)`): the hairline underline beneath each field at rest.
 - **Strawberry Foreground** (`oklch(0.99 0 0)`): text on the accent button.
+- **Board Error** (`oklch(0.74 0.19 25)`): a lighter tint off the strawberry hue, reserved for the inline error message and its correction rule — legible as body text against the dark ground, distinct from the button's darker, more saturated strawberry.
 
 ### Named Rules
 **The One Accent Rule.** Strawberry red appears in exactly two places: the primary button and a focused field's rule. It never decorates a label, a link, or a passive element — its rarity is what makes it read as "actionable" on a screen with almost no other color.
@@ -128,7 +144,7 @@ Everything is rectangular with hard corners — no `border-radius` is used anywh
 ### Inputs / Fields
 - **Style:** no border box; a single `border-bottom: 2px solid oklch(0.42 0.02 165)` under transparent, ground-colored text. 44px+ tap height for mobile.
 - **Focus:** the bottom rule changes color to the strawberry focus tone (`oklch(0.62 0.19 20)`); no glow, no ring.
-- **Error:** the field gets `aria-invalid`; the error message itself renders below the field stack as sentence-case text in `oklch(0.74 0.19 25)`, preceded by a short rotated rule standing in for a chalk correction stroke — never a boxed alert or a toast.
+- **Error:** the field gets `aria-invalid`; the error message itself renders below the field stack as sentence-case text in Board Error (`oklch(0.74 0.19 25)`), preceded by a short rotated rule standing in for a chalk correction stroke — never a boxed alert or a toast.
 - **Disabled:** `opacity: 0.5`, matching the button's disabled treatment.
 
 ## Do's and Don'ts

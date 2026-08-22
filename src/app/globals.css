@@ -46,6 +46,19 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* "The Entreposto Board" world tokens (see DESIGN.md) */
+  --color-board-ground: var(--board-ground);
+  --color-board-rule: var(--board-rule);
+  --color-chalk-white: var(--chalk-white);
+  --color-chalk-label: var(--chalk-label);
+  --color-chalk-subtitle: var(--chalk-subtitle);
+  --color-chalk-placeholder: var(--chalk-placeholder);
+  --color-strawberry: var(--strawberry);
+  --color-strawberry-hover: var(--strawberry-hover);
+  --color-strawberry-focus: var(--strawberry-focus);
+  --color-strawberry-foreground: var(--strawberry-foreground);
+  --color-board-error: var(--board-error);
 }
 
 :root {
@@ -81,6 +94,19 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* "The Entreposto Board" world tokens (see DESIGN.md) */
+  --board-ground: oklch(0.22 0.02 165);
+  --board-rule: oklch(0.42 0.02 165);
+  --chalk-white: oklch(0.97 0.01 90);
+  --chalk-label: oklch(0.82 0.02 120);
+  --chalk-subtitle: oklch(0.65 0.02 165);
+  --chalk-placeholder: oklch(0.55 0.02 165);
+  --strawberry: oklch(0.52 0.19 25);
+  --strawberry-hover: oklch(0.57 0.19 25);
+  --strawberry-focus: oklch(0.62 0.19 20);
+  --strawberry-foreground: oklch(0.99 0 0);
+  --board-error: oklch(0.74 0.19 25);
 }
 
 .dark {
