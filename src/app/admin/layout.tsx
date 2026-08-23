@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 // surface brief for src/app/admin/layout.tsx.
 const NAV_ITEMS = [
   { href: "/admin/lancar-preco", label: "Lançar Preço" },
+  { href: "/admin/insights", label: "Insights" },
 ] as const;
 
 export default function AdminLayout({
