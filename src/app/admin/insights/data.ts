@@ -2,12 +2,48 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { STRAWBERRY_CATEGORIES, type StrawberryCategory } from "@/lib/validation/strawberry-price";
 import { rangeToDateInterval, type InsightsRange } from "./date-range";
 
+// Matches Supabase's own default `db.max_rows` API cap, so pagination works
+// correctly whether the project's cap is 1000 or higher.
+const PAGE_SIZE = 1000;
+
 export type PriceHistoryRow = {
   data: string;
   categoria: StrawberryCategory;
   precoMin: number;
   precoMax: number;
 };
+
+type RawRow = { data: string; categoria: string; preco_min: number; preco_max: number };
+
+// Supabase caps a single `.select()` at `db.max_rows` (1000 by default). A
+// single unpaginated query would silently truncate once the table crosses
+// that many matching rows, so we page through with `.range()` until a page
+// comes back shorter than PAGE_SIZE (meaning we've reached the end).
+async function fetchAllPages<T>(
+  fetchPage: (offset: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+): Promise<T[]> {
+  const rows: T[] = [];
+  let offset = 0;
+
+  while (true) {
+    const { data, error } = await fetchPage(offset);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const page = data ?? [];
+    rows.push(...page);
+
+    if (page.length < PAGE_SIZE) {
+      break;
+    }
+
+    offset += PAGE_SIZE;
+  }
+
+  return rows;
+}
 
 export async function getPriceHistory(
   range: InsightsRange,
@@ -16,25 +52,30 @@ export async function getPriceHistory(
   const supabase = await createSupabaseServerClient();
   const { from, to } = rangeToDateInterval(range, today);
 
-  const { data, error } = await supabase
-    .from("precos_morango")
-    .select("data, categoria, preco_min, preco_max")
-    .gte("data", from)
-    .lte("data", to)
-    .order("data", { ascending: true });
-
-  if (error) {
-    throw new Error(`Falha ao buscar histórico de preços: ${error.message}`);
+  let rows: RawRow[];
+  try {
+    rows = await fetchAllPages<RawRow>((offset) =>
+      supabase
+        .from("precos_morango")
+        .select("data, categoria, preco_min, preco_max")
+        .gte("data", from)
+        .lte("data", to)
+        .order("data", { ascending: true })
+        .order("categoria", { ascending: true })
+        .range(offset, offset + PAGE_SIZE - 1)
+    );
+  } catch (error) {
+    throw new Error(
+      `Falha ao buscar histórico de preços: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 
-  return (data ?? []).map(
-    (row: { data: string; categoria: string; preco_min: number; preco_max: number }) => ({
-      data: row.data,
-      categoria: row.categoria as StrawberryCategory,
-      precoMin: Number(row.preco_min),
-      precoMax: Number(row.preco_max),
-    })
-  );
+  return rows.map((row) => ({
+    data: row.data,
+    categoria: row.categoria as StrawberryCategory,
+    precoMin: Number(row.preco_min),
+    precoMax: Number(row.preco_max),
+  }));
 }
 
 export type AnnualAverage = {
@@ -46,12 +87,20 @@ export type AnnualAverage = {
 export async function getAnnualAverages(): Promise<AnnualAverage[]> {
   const supabase = await createSupabaseServerClient();
 
-  const { data, error } = await supabase
-    .from("precos_morango")
-    .select("data, categoria, preco_min, preco_max");
-
-  if (error) {
-    throw new Error(`Falha ao buscar médias anuais: ${error.message}`);
+  let rows: RawRow[];
+  try {
+    rows = await fetchAllPages<RawRow>((offset) =>
+      supabase
+        .from("precos_morango")
+        .select("data, categoria, preco_min, preco_max")
+        .order("data", { ascending: true })
+        .order("categoria", { ascending: true })
+        .range(offset, offset + PAGE_SIZE - 1)
+    );
+  } catch (error) {
+    throw new Error(
+      `Falha ao buscar médias anuais: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 
   const sums = new Map<
@@ -59,12 +108,7 @@ export async function getAnnualAverages(): Promise<AnnualAverage[]> {
     { year: number; categoria: StrawberryCategory; total: number; count: number }
   >();
 
-  for (const row of (data ?? []) as {
-    data: string;
-    categoria: string;
-    preco_min: number;
-    preco_max: number;
-  }[]) {
+  for (const row of rows) {
     const year = Number(row.data.slice(0, 4));
     const categoria = row.categoria as StrawberryCategory;
     const key = `${year}-${categoria}`;

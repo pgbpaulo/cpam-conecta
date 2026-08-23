@@ -43,13 +43,9 @@ export default async function InsightsPage({
 
       <SummaryStats stats={stats} />
 
-      <div className="rounded-[24px] bg-canvas p-6 lg:p-8">
-        <PriceTrendChart points={trendPoints} />
-      </div>
+      <PriceTrendChart points={trendPoints} />
 
-      <div className="rounded-[24px] bg-canvas p-6 lg:p-8">
-        <AnnualAveragesChart points={annualPoints} />
-      </div>
+      <AnnualAveragesChart points={annualPoints} />
     </div>
   );
 }

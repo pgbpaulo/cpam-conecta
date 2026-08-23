@@ -1,4 +1,4 @@
-import type { StrawberryCategory } from "@/lib/validation/strawberry-price";
+import { STRAWBERRY_CATEGORIES, type StrawberryCategory } from "@/lib/validation/strawberry-price";
 import type { PriceHistoryRow } from "./data";
 
 export type SummaryStats = {
@@ -28,7 +28,10 @@ export function computeSummaryStats(rows: PriceHistoryRow[]): SummaryStats | nul
   const latestDate = rows.reduce((max, row) => (row.data > max ? row.data : max), rows[0].data);
   const latestEntries = rows
     .filter((row) => row.data === latestDate)
-    .map((row) => ({ categoria: row.categoria, precoMin: row.precoMin, precoMax: row.precoMax }));
+    .map((row) => ({ categoria: row.categoria, precoMin: row.precoMin, precoMax: row.precoMax }))
+    .sort(
+      (a, b) => STRAWBERRY_CATEGORIES.indexOf(a.categoria) - STRAWBERRY_CATEGORIES.indexOf(b.categoria)
+    );
 
   return {
     average,
