@@ -6,11 +6,14 @@ import {
   Line,
   LineChart,
   ResponsiveContainer,
+  Symbols,
   Tooltip,
   XAxis,
   YAxis,
   type DefaultLegendContentProps,
+  type DotItemDotProps,
   type LegendPayload,
+  type SymbolType,
   type TooltipContentProps,
 } from "recharts";
 
@@ -26,15 +29,26 @@ import type { TrendPoint } from "./trend-series";
 // Validated colorblind-safe with `validate_palette.js` on this exact 4-hex
 // set for a line chart's adjacent-pairs check (worst adjacent CVD ΔE 9.1,
 // normal-vision floor 22.9 — both clear the gates). Two of the four slots
-// (aqua, yellow) sit under 3:1 contrast against the white card surface; the
-// palette's own rule makes that legal only with a "relief" channel, which
-// here is the always-on legend + tooltip below — identity is never carried
-// by hue alone.
-const CATEGORY_COLOR: Record<StrawberryCategory, string> = {
-  Velho: "#2a78d6",
-  Bom: "#eb6834",
-  "Safra Nova Top": "#1baf7a",
-  "Safra Nova Diferenciado": "#eda100",
+// (aqua, yellow) sit under 3:1 contrast against the white card surface, and
+// hue alone is a colorblind reader's only channel while scanning a live
+// chart (the legend/tooltip text doesn't help distinguish two already-drawn
+// lines at a glance). So every category also carries a distinct
+// `strokeDasharray` and a distinct marker shape — composite hue × shape
+// encoding, per the skill's secondary-encoding allowance — and the legend
+// mirrors the exact same dash + shape so the key matches what's on the
+// chart, not just its color.
+const LINE_STYLE: Record<
+  StrawberryCategory,
+  { color: string; dash?: string; shape: SymbolType }
+> = {
+  Velho: { color: "#2a78d6", shape: "circle" }, // solid line
+  Bom: { color: "#eb6834", dash: "8 4", shape: "square" }, // dashed
+  "Safra Nova Top": { color: "#1baf7a", dash: "1 4", shape: "diamond" }, // dotted
+  "Safra Nova Diferenciado": {
+    color: "#eda100",
+    dash: "10 3 2 3",
+    shape: "triangle",
+  }, // dash-dot
 };
 
 const AXIS_DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
@@ -76,16 +90,92 @@ function formatCurrency(value: number): string {
   return CURRENCY_FORMATTER.format(value);
 }
 
+// A shape-keyed line marker (8px mark, matching the mark spec's ≥8px
+// diameter), one per category. Skips rendering entirely on a gap (no
+// lançamento that day for that category) rather than plotting a marker at a
+// null/undefined value.
+function makeDot(category: StrawberryCategory) {
+  const style = LINE_STYLE[category];
+
+  return function CategoryDot(props: DotItemDotProps) {
+    const { cx, cy, value, index } = props;
+    if (value == null || cx == null || cy == null) {
+      return null;
+    }
+
+    return (
+      <Symbols
+        key={`dot-${category}-${index}`}
+        cx={cx}
+        cy={cy}
+        type={style.shape}
+        size={64}
+        fill={style.color}
+        stroke="var(--canvas)"
+        strokeWidth={2}
+      />
+    );
+  };
+}
+
+function makeActiveDot(category: StrawberryCategory) {
+  const style = LINE_STYLE[category];
+
+  return function CategoryActiveDot(props: { cx?: number; cy?: number }) {
+    const { cx, cy } = props;
+    if (cx == null || cy == null) {
+      return null;
+    }
+
+    return (
+      <Symbols
+        cx={cx}
+        cy={cy}
+        type={style.shape}
+        size={110}
+        fill={style.color}
+        stroke="var(--canvas)"
+        strokeWidth={2}
+      />
+    );
+  };
+}
+
+// A small dash + shape swatch shared by the legend and the tooltip, so the
+// key a reader learns in either place matches the line on the chart, not
+// just its color.
+function LineKey({ category }: { category: StrawberryCategory }) {
+  const style = LINE_STYLE[category];
+
+  return (
+    <svg width="28" height="12" viewBox="0 0 28 12" aria-hidden className="shrink-0">
+      <line
+        x1={0}
+        y1={6}
+        x2={28}
+        y2={6}
+        stroke={style.color}
+        strokeWidth={2}
+        strokeDasharray={style.dash}
+        strokeLinecap="round"
+      />
+      <Symbols cx={14} cy={6} type={style.shape} size={40} fill={style.color} />
+    </svg>
+  );
+}
+
 // Custom tooltip: crosshair-driven readout of every category present at the
 // hovered date (missing categories are simply absent, not zeroed). Values
-// lead in weight; the series color rides a short line-key rather than a
-// filled box, per the skill's tooltip anatomy.
+// lead in weight; each row keys with the same dash + shape swatch used on
+// the chart and in the legend, per the skill's tooltip anatomy.
 function ChartTooltip({ active, payload, label }: TooltipContentProps) {
   if (!active || !payload || payload.length === 0) {
     return null;
   }
 
-  const entries = payload.filter((entry) => typeof entry.value === "number");
+  const entries = payload.filter(
+    (entry) => typeof entry.value === "number" && entry.name != null
+  );
   if (entries.length === 0) {
     return null;
   }
@@ -98,11 +188,7 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
       <ul className="mt-2 flex flex-col gap-1.5">
         {entries.map((entry) => (
           <li key={String(entry.dataKey)} className="flex items-center gap-2.5 text-sm">
-            <span
-              aria-hidden
-              className="h-[2px] w-4 shrink-0 rounded-full"
-              style={{ backgroundColor: entry.color }}
-            />
+            <LineKey category={entry.name as StrawberryCategory} />
             <span className="text-body">{String(entry.name)}</span>
             <span className="ml-auto pl-3 font-semibold text-ink">
               {formatCurrency(entry.value as number)}
@@ -114,8 +200,8 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
   );
 }
 
-// Custom legend: line-shaped swatches (mirroring the Line mark itself) in
-// text-body ink, never a colored box or colored text — identity rides the
+// Custom legend: the same dash + shape swatch as the chart lines and the
+// tooltip (never a colored box or colored text) — identity rides the
 // swatch, not the label.
 function ChartLegend({ payload }: DefaultLegendContentProps) {
   const entries = (payload ?? []) as LegendPayload[];
@@ -130,11 +216,7 @@ function ChartLegend({ payload }: DefaultLegendContentProps) {
           key={String(entry.dataKey ?? entry.value)}
           className="flex items-center gap-2 text-sm text-body"
         >
-          <span
-            aria-hidden
-            className="h-[2px] w-4 shrink-0 rounded-full"
-            style={{ backgroundColor: entry.color }}
-          />
+          <LineKey category={entry.value as StrawberryCategory} />
           {entry.value}
         </li>
       ))}
@@ -190,10 +272,11 @@ export function PriceTrendChart({ points }: { points: TrendPoint[] }) {
               type="monotone"
               dataKey={category}
               name={category}
-              stroke={CATEGORY_COLOR[category]}
+              stroke={LINE_STYLE[category].color}
               strokeWidth={2}
-              dot={{ r: 4, strokeWidth: 0, fill: CATEGORY_COLOR[category] }}
-              activeDot={{ r: 5, strokeWidth: 2, stroke: "var(--canvas)" }}
+              strokeDasharray={LINE_STYLE[category].dash}
+              dot={makeDot(category)}
+              activeDot={makeActiveDot(category)}
               connectNulls={false}
               isAnimationActive={false}
             />
