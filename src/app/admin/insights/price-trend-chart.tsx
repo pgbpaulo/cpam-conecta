@@ -11,7 +11,6 @@ import {
   XAxis,
   YAxis,
   type DefaultLegendContentProps,
-  type DotItemDotProps,
   type LegendPayload,
   type SymbolType,
   type TooltipContentProps,
@@ -33,10 +32,10 @@ import type { TrendPoint } from "./trend-series";
 // hue alone is a colorblind reader's only channel while scanning a live
 // chart (the legend/tooltip text doesn't help distinguish two already-drawn
 // lines at a glance). So every category also carries a distinct
-// `strokeDasharray` and a distinct marker shape — composite hue × shape
+// `strokeDasharray`, visible along the whole line — a continuous secondary
 // encoding, per the skill's secondary-encoding allowance — and the legend
-// mirrors the exact same dash + shape so the key matches what's on the
-// chart, not just its color.
+// swatch pairs that same dash with a distinct shape so the key stays
+// learnable even without per-point markers drawn on the chart itself.
 const LINE_STYLE: Record<
   StrawberryCategory,
   { color: string; dash?: string; shape: SymbolType }
@@ -88,34 +87,6 @@ function formatTooltipDate(isoDate: string): string {
 
 function formatCurrency(value: number): string {
   return CURRENCY_FORMATTER.format(value);
-}
-
-// A shape-keyed line marker (8px mark, matching the mark spec's ≥8px
-// diameter), one per category. Skips rendering entirely on a gap (no
-// lançamento that day for that category) rather than plotting a marker at a
-// null/undefined value.
-function makeDot(category: StrawberryCategory) {
-  const style = LINE_STYLE[category];
-
-  return function CategoryDot(props: DotItemDotProps) {
-    const { cx, cy, value, index } = props;
-    if (value == null || cx == null || cy == null) {
-      return null;
-    }
-
-    return (
-      <Symbols
-        key={`dot-${category}-${index}`}
-        cx={cx}
-        cy={cy}
-        type={style.shape}
-        size={64}
-        fill={style.color}
-        stroke="var(--canvas)"
-        strokeWidth={2}
-      />
-    );
-  };
 }
 
 function makeActiveDot(category: StrawberryCategory) {
@@ -275,7 +246,7 @@ export function PriceTrendChart({ points }: { points: TrendPoint[] }) {
               stroke={LINE_STYLE[category].color}
               strokeWidth={2}
               strokeDasharray={LINE_STYLE[category].dash}
-              dot={makeDot(category)}
+              dot={false}
               activeDot={makeActiveDot(category)}
               connectNulls={false}
               isAnimationActive={false}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useId } from "react";
-import { Loader2 } from "lucide-react";
+import { CircleAlert, Loader2 } from "lucide-react";
 
 import { login, type LoginState } from "./actions";
 
@@ -14,13 +14,10 @@ export function LoginForm() {
   const errorId = useId();
 
   return (
-    <form action={formAction} className="flex w-full flex-col gap-6" noValidate>
-      <div className="flex flex-col gap-5">
+    <form action={formAction} className="flex w-full flex-col gap-5" noValidate>
+      <div className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor={emailId}
-            className="text-xs font-bold tracking-[0.14em] text-chalk-label uppercase"
-          >
+          <label htmlFor={emailId} className="text-sm text-body">
             E-mail
           </label>
           <input
@@ -33,16 +30,13 @@ export function LoginForm() {
             disabled={isPending}
             aria-invalid={state.status === "error" || undefined}
             aria-describedby={state.status === "error" ? errorId : undefined}
-            className="h-11 border-0 border-b-2 border-board-rule bg-transparent px-0.5 text-base text-chalk-white outline-none transition-colors placeholder:text-chalk-placeholder focus:border-strawberry-focus disabled:opacity-50"
+            className="h-12 rounded-[12px] border border-ink bg-canvas px-4 text-base text-ink outline-none transition-shadow placeholder:text-mute focus:ring-2 focus:ring-primary disabled:opacity-50"
             placeholder="voce@ceasinhadomorango.com.br"
           />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor={passwordId}
-            className="text-xs font-bold tracking-[0.14em] text-chalk-label uppercase"
-          >
+          <label htmlFor={passwordId} className="text-sm text-body">
             Senha
           </label>
           <input
@@ -54,7 +48,7 @@ export function LoginForm() {
             disabled={isPending}
             aria-invalid={state.status === "error" || undefined}
             aria-describedby={state.status === "error" ? errorId : undefined}
-            className="h-11 border-0 border-b-2 border-board-rule bg-transparent px-0.5 text-base tracking-widest text-chalk-white outline-none transition-colors placeholder:text-chalk-placeholder placeholder:tracking-normal focus:border-strawberry-focus disabled:opacity-50"
+            className="h-12 rounded-[12px] border border-ink bg-canvas px-4 text-base text-ink outline-none transition-shadow placeholder:text-mute focus:ring-2 focus:ring-primary disabled:opacity-50"
             placeholder="Sua senha"
           />
         </div>
@@ -64,8 +58,9 @@ export function LoginForm() {
         <p
           id={errorId}
           role="alert"
-          className="relative pt-3 text-sm text-board-error before:absolute before:top-0 before:left-0 before:h-[2px] before:w-10 before:-rotate-2 before:bg-board-error before:content-['']"
+          className="flex items-start gap-1.5 text-sm text-negative"
         >
+          <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
           {state.message}
         </p>
       ) : null}
@@ -73,7 +68,7 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="mt-2 inline-flex h-12 w-full items-center justify-center gap-2 bg-strawberry text-sm font-bold tracking-[0.14em] text-strawberry-foreground uppercase transition-[background-color,opacity] hover:bg-strawberry-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-strawberry-focus disabled:cursor-not-allowed disabled:opacity-70"
+        className="mt-1 inline-flex h-12 w-full items-center justify-center gap-2 rounded-[24px] bg-primary text-[16px] font-semibold text-on-primary transition-colors hover:bg-primary-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isPending ? (
           <>

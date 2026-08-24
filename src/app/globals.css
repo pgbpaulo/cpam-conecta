@@ -47,18 +47,32 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* "The Entreposto Board" world tokens (see DESIGN.md) */
-  --color-board-ground: var(--board-ground);
-  --color-board-rule: var(--board-rule);
-  --color-chalk-white: var(--chalk-white);
-  --color-chalk-label: var(--chalk-label);
-  --color-chalk-subtitle: var(--chalk-subtitle);
-  --color-chalk-placeholder: var(--chalk-placeholder);
-  --color-strawberry: var(--strawberry);
-  --color-strawberry-hover: var(--strawberry-hover);
-  --color-strawberry-focus: var(--strawberry-focus);
-  --color-strawberry-foreground: var(--strawberry-foreground);
-  --color-board-error: var(--board-error);
+  /* "CPAM Conecta" world tokens (see DESIGN.md). --primary/--primary-foreground
+     below are the shadcn scaffold's own slots, repurposed in :root to the
+     brand's lime green so bg-primary/text-primary-foreground stay correct
+     for any future shadcn component too — everything else is a fresh key
+     matching DESIGN.md's `colors:` block literally. */
+  --color-on-primary: var(--on-primary);
+  --color-primary-active: var(--primary-active);
+  --color-primary-neutral: var(--primary-neutral);
+  --color-primary-pale: var(--primary-pale);
+  --color-ink: var(--ink);
+  --color-ink-deep: var(--ink-deep);
+  --color-body: var(--body-text);
+  --color-mute: var(--mute);
+  --color-canvas: var(--canvas);
+  --color-canvas-soft: var(--canvas-soft);
+  --color-positive: var(--positive);
+  --color-positive-deep: var(--positive-deep);
+  --color-warning: var(--warning);
+  --color-warning-deep: var(--warning-deep);
+  --color-warning-content: var(--warning-content);
+  --color-negative: var(--negative);
+  --color-negative-deep: var(--negative-deep);
+  --color-negative-darkest: var(--negative-darkest);
+  --color-negative-bg: var(--negative-bg);
+  --color-accent-orange: var(--accent-orange);
+  --color-accent-cyan: var(--accent-cyan);
 }
 
 :root {
@@ -68,8 +82,8 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
+  --primary: #9fe870;
+  --primary-foreground: #0e0f0c;
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
@@ -95,18 +109,28 @@
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
 
-  /* "The Entreposto Board" world tokens (see DESIGN.md) */
-  --board-ground: oklch(0.22 0.02 165);
-  --board-rule: oklch(0.42 0.02 165);
-  --chalk-white: oklch(0.97 0.01 90);
-  --chalk-label: oklch(0.82 0.02 120);
-  --chalk-subtitle: oklch(0.65 0.02 165);
-  --chalk-placeholder: oklch(0.55 0.02 165);
-  --strawberry: oklch(0.52 0.19 25);
-  --strawberry-hover: oklch(0.57 0.19 25);
-  --strawberry-focus: oklch(0.62 0.19 20);
-  --strawberry-foreground: oklch(0.99 0 0);
-  --board-error: oklch(0.74 0.19 25);
+  /* "CPAM Conecta" world tokens (see DESIGN.md) */
+  --on-primary: #0e0f0c;
+  --primary-active: #cdffad;
+  --primary-neutral: #c5edab;
+  --primary-pale: #e2f6d5;
+  --ink: #0e0f0c;
+  --ink-deep: #163300;
+  --body-text: #454745;
+  --mute: #868685;
+  --canvas: #ffffff;
+  --canvas-soft: #e8ebe6;
+  --positive: #2ead4b;
+  --positive-deep: #054d28;
+  --warning: #ffd11a;
+  --warning-deep: #b86700;
+  --warning-content: #4a3b1c;
+  --negative: #d03238;
+  --negative-deep: #a72027;
+  --negative-darkest: #a7000d;
+  --negative-bg: #320707;
+  --accent-orange: #ffc091;
+  --accent-cyan: #38c8ff;
 }
 
 .dark {
@@ -148,10 +172,17 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-canvas-soft text-ink;
   }
   html {
     @apply font-sans;
+  }
+  ::selection {
+    background-color: var(--primary);
+    color: var(--on-primary);
+  }
+  input {
+    caret-color: var(--ink);
   }
 }
 

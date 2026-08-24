@@ -1,7 +1,7 @@
 "use client";
 
-import { useActionState, useId, useMemo, useState } from "react";
-import { Check, Loader2, MoveRight } from "lucide-react";
+import { startTransition, useActionState, useId, useMemo, useState } from "react";
+import { Check, CircleAlert, Loader2, MoveRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
@@ -12,12 +12,12 @@ import {
 } from "@/lib/validation/strawberry-price";
 import { savePrices, type SavePricesResult } from "./actions";
 
-// Extends "The Entreposto Board" (see DESIGN.md) rather than inventing a new
-// world: category blocks reuse the login form's ruled-row field, the save
-// button reuses its strawberry primary button, and the "already launched"
-// indicator reuses recent-days-list's Lançado/Sem-lançamento vocabulary
-// (chalk-subtitle + Check vs chalk-placeholder text) — none of that repeats here
-// as decoration, it is the one component grammar this surface already owns.
+// Extends "CPAM Conecta" (see DESIGN.md) rather than inventing a new world:
+// category blocks reuse the login form's black-bordered field, the save
+// button reuses its lime-green primary pill, and the "already launched"
+// indicator reuses recent-days-list's badge-positive vocabulary — none of
+// that repeats here as decoration, it is the one component grammar this
+// surface already owns.
 
 const CURRENCY_FORMATTER = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -119,19 +119,18 @@ export function StrawberryPriceForm({
       };
     }
 
-    formAction({ data: date, precos });
+    startTransition(() => {
+      formAction({ data: date, precos });
+    });
   }
 
   return (
-    <div className="flex flex-col gap-10 px-5 py-6">
+    <div className="flex flex-col gap-8">
       <form method="get" action="/admin/lancar-preco" className="flex flex-col gap-1.5">
-        <label
-          htmlFor={dateFieldId}
-          className="text-xs font-bold tracking-[0.14em] text-chalk-label uppercase"
-        >
+        <label htmlFor={dateFieldId} className="text-sm text-body">
           Data
         </label>
-        <div className="flex items-end gap-3">
+        <div className="flex items-center gap-3">
           <input
             id={dateFieldId}
             name="data"
@@ -139,12 +138,12 @@ export function StrawberryPriceForm({
             defaultValue={date}
             disabled={isPending}
             onChange={(event) => event.currentTarget.form?.requestSubmit()}
-            className="h-11 min-w-0 flex-1 border-0 border-b-2 border-board-rule bg-transparent px-0.5 text-base text-chalk-white outline-none transition-colors focus:border-strawberry-focus disabled:opacity-50"
+            className="h-12 min-w-0 flex-1 rounded-[12px] border border-ink bg-canvas px-4 text-base text-ink outline-none transition-shadow focus:ring-2 focus:ring-primary disabled:opacity-50"
           />
           <button
             type="submit"
             disabled={isPending}
-            className="inline-flex h-11 shrink-0 items-center gap-1.5 border-b-2 border-transparent text-xs font-bold tracking-[0.14em] text-chalk-label uppercase transition-colors hover:text-chalk-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-strawberry-focus disabled:opacity-50"
+            className="inline-flex h-12 shrink-0 items-center gap-1.5 rounded-[12px] border border-ink bg-canvas px-4 text-sm font-semibold text-ink transition-colors hover:bg-canvas-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:opacity-50"
           >
             Ver
             <MoveRight className="size-3.5" aria-hidden />
@@ -152,7 +151,7 @@ export function StrawberryPriceForm({
         </div>
       </form>
 
-      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-10">
+      <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8">
         <div className="flex flex-col">
           {STRAWBERRY_CATEGORIES.map((categoria) => {
             const isLaunched = launchedCategories.has(categoria);
@@ -165,35 +164,23 @@ export function StrawberryPriceForm({
             return (
               <div
                 key={categoria}
-                className="flex flex-col gap-4 border-b border-board-rule py-5 first:pt-0 last:border-b-0"
+                className="flex flex-col gap-4 border-b border-canvas-soft py-5 first:pt-0 last:border-b-0"
               >
                 <div className="flex items-baseline justify-between gap-3">
-                  <span className="text-sm font-bold tracking-[0.1em] text-chalk-white uppercase">
-                    {categoria}
-                  </span>
-                  <span
-                    className={cn(
-                      "flex shrink-0 items-center gap-1.5 text-xs font-bold tracking-[0.1em] uppercase",
-                      isLaunched ? "text-chalk-subtitle" : "text-chalk-placeholder"
-                    )}
-                  >
-                    {isLaunched ? (
-                      <>
-                        <Check className="size-3.5" aria-hidden />
-                        Lançado
-                      </>
-                    ) : (
-                      "Sem lançamento"
-                    )}
-                  </span>
+                  <span className="text-[16px] font-semibold text-ink">{categoria}</span>
+                  {isLaunched ? (
+                    <span className="flex shrink-0 items-center gap-1 rounded-full bg-primary-pale px-2.5 py-1 text-xs font-semibold text-positive-deep">
+                      <Check className="size-3.5" aria-hidden />
+                      Lançado
+                    </span>
+                  ) : (
+                    <span className="shrink-0 text-xs text-mute">Sem lançamento</span>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor={minId}
-                      className="text-xs font-bold tracking-[0.14em] text-chalk-label uppercase"
-                    >
+                    <label htmlFor={minId} className="text-sm text-body">
                       Preço mínimo
                     </label>
                     <input
@@ -204,15 +191,12 @@ export function StrawberryPriceForm({
                       value={fields[categoria].precoMin}
                       onChange={(event) => updateField(categoria, "precoMin", event.target.value)}
                       placeholder="0,00"
-                      className="h-11 w-full border-0 border-b-2 border-board-rule bg-transparent px-0.5 text-base text-chalk-white outline-none transition-colors placeholder:text-chalk-placeholder focus:border-strawberry-focus disabled:opacity-50"
+                      className="h-12 w-full rounded-[12px] border border-ink bg-canvas px-4 text-base text-ink outline-none transition-shadow placeholder:text-mute focus:ring-2 focus:ring-primary disabled:opacity-50"
                     />
                   </div>
 
                   <div className="flex flex-col gap-1.5">
-                    <label
-                      htmlFor={maxId}
-                      className="text-xs font-bold tracking-[0.14em] text-chalk-label uppercase"
-                    >
+                    <label htmlFor={maxId} className="text-sm text-body">
                       Preço máximo
                     </label>
                     <input
@@ -223,16 +207,14 @@ export function StrawberryPriceForm({
                       value={fields[categoria].precoMax}
                       onChange={(event) => updateField(categoria, "precoMax", event.target.value)}
                       placeholder="0,00"
-                      className="h-11 w-full border-0 border-b-2 border-board-rule bg-transparent px-0.5 text-base text-chalk-white outline-none transition-colors placeholder:text-chalk-placeholder focus:border-strawberry-focus disabled:opacity-50"
+                      className="h-12 w-full rounded-[12px] border border-ink bg-canvas px-4 text-base text-ink outline-none transition-shadow placeholder:text-mute focus:ring-2 focus:ring-primary disabled:opacity-50"
                     />
                   </div>
                 </div>
 
                 {categoryError ? (
-                  <p
-                    role="alert"
-                    className="relative pt-3 text-sm text-board-error before:absolute before:top-0 before:left-0 before:h-[2px] before:w-10 before:-rotate-2 before:bg-board-error before:content-['']"
-                  >
+                  <p role="alert" className="flex items-start gap-1.5 text-sm text-negative">
+                    <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
                     {categoryError}
                   </p>
                 ) : null}
@@ -244,7 +226,7 @@ export function StrawberryPriceForm({
         <button
           type="submit"
           disabled={isPending}
-          className="inline-flex h-12 w-full items-center justify-center gap-2 bg-strawberry text-sm font-bold tracking-[0.14em] text-strawberry-foreground uppercase transition-[background-color,opacity] hover:bg-strawberry-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-strawberry-focus disabled:cursor-not-allowed disabled:opacity-70"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-[24px] bg-primary text-[16px] font-semibold text-on-primary transition-colors hover:bg-primary-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-70"
         >
           {isPending ? (
             <>
@@ -257,34 +239,31 @@ export function StrawberryPriceForm({
         </button>
 
         {result && result.status !== "success" ? (
-          <p
-            id={feedbackId}
-            role="alert"
-            className="relative pt-3 text-sm text-board-error before:absolute before:top-0 before:left-0 before:h-[2px] before:w-10 before:-rotate-2 before:bg-board-error before:content-['']"
-          >
+          <p role="alert" id={feedbackId} className="flex items-start gap-1.5 text-sm text-negative">
+            <CircleAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
             {result.message}
           </p>
         ) : null}
 
         {result && result.status === "success" ? (
           <div id={feedbackId} role="status" className="flex flex-col gap-3">
-            <p className="text-xs font-bold tracking-[0.14em] text-chalk-label uppercase">
+            <p className="text-sm text-body">
               Preços salvos às {TIME_FORMATTER.format(new Date(result.savedAt))}
             </p>
             <ul className="flex flex-col">
               {result.entries.map((entry) => (
                 <li
                   key={entry.categoria}
-                  className="flex items-center justify-between gap-3 border-b border-board-rule py-2.5 last:border-b-0"
+                  className="flex items-center justify-between gap-3 border-b border-canvas-soft py-2.5 last:border-b-0"
                 >
-                  <span className="flex items-center gap-2 text-sm text-chalk-white">
-                    <Check className="size-3.5 shrink-0 text-chalk-subtitle" aria-hidden />
+                  <span className="flex items-center gap-2 text-sm text-ink">
+                    <Check className="size-3.5 shrink-0 text-positive" aria-hidden />
                     {entry.categoria}
                   </span>
-                  <span className="flex items-baseline gap-2 text-sm text-chalk-white">
+                  <span className="flex items-baseline gap-2 text-sm text-ink">
                     {CURRENCY_FORMATTER.format(entry.precoMin)} –{" "}
                     {CURRENCY_FORMATTER.format(entry.precoMax)}
-                    <span className="text-xs font-bold tracking-[0.1em] text-chalk-subtitle uppercase">
+                    <span className="rounded-full bg-primary-pale px-2 py-0.5 text-xs font-semibold text-positive-deep">
                       {entry.wasUpdate ? "Atualizado" : "Novo"}
                     </span>
                   </span>
