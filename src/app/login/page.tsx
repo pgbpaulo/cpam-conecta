@@ -26,8 +26,7 @@ export default function LoginPage() {
           </h1>
           <p className="max-w-[26rem] text-base text-canvas-soft">
             Registro diário do preço da caixa de morango — mínimo e máximo por
-            categoria — direto do celular, com confirmação clara de que ficou
-            salvo.
+            categoria.
           </p>
         </div>
 

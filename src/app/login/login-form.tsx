@@ -31,7 +31,7 @@ export function LoginForm() {
             aria-invalid={state.status === "error" || undefined}
             aria-describedby={state.status === "error" ? errorId : undefined}
             className="h-12 rounded-[12px] border border-ink bg-canvas px-4 text-base text-ink outline-none transition-shadow placeholder:text-mute focus:ring-2 focus:ring-primary disabled:opacity-50"
-            placeholder="voce@ceasinhadomorango.com.br"
+            placeholder="voce@cpam.com.br"
           />
         </div>
 
