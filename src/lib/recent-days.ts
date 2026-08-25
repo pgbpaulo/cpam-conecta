@@ -1,4 +1,4 @@
-export type DayStatus = "lancado" | "sem-lancamento";
+export type DayStatus = "lancado" | "sem-lancamento" | "feriado";
 
 export type RecentDay = {
   date: string;
@@ -31,6 +31,7 @@ const SUNDAY = 0;
 export function computeRecentDays(
   today: Date,
   launchedDates: ReadonlySet<string>,
+  holidayDates: ReadonlySet<string>,
   windowDays = 15
 ): RecentDay[] {
   const days: RecentDay[] = [];
@@ -44,10 +45,12 @@ export function computeRecentDays(
     }
 
     const isoDate = toISODate(date);
-    days.push({
-      date: isoDate,
-      status: launchedDates.has(isoDate) ? "lancado" : "sem-lancamento",
-    });
+    const status: DayStatus = holidayDates.has(isoDate)
+      ? "feriado"
+      : launchedDates.has(isoDate)
+        ? "lancado"
+        : "sem-lancamento";
+    days.push({ date: isoDate, status });
   }
 
   return days;

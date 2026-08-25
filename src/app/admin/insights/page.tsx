@@ -1,10 +1,14 @@
+import { requireAdmin } from "@/lib/supabase/require-admin";
+
 import { getPriceHistory, getAnnualAverages } from "./data";
 import { buildTrendSeries } from "./trend-series";
 import { buildAnnualSeries } from "./annual-series";
 import { computeSummaryStats } from "./summary";
+import { computeCategoryExtremes } from "./category-extremes";
 import { INSIGHTS_RANGES, type InsightsRange } from "./date-range";
 import { PeriodFilter } from "./period-filter";
 import { SummaryStats } from "./summary-stats";
+import { CategoryExtremesCard } from "./category-extremes-card";
 import { PriceTrendChart } from "./price-trend-chart";
 import { AnnualAveragesChart } from "./annual-averages-chart";
 import { todayInSaoPaulo } from "@/lib/recent-days";
@@ -22,6 +26,8 @@ export default async function InsightsPage({
 }: {
   searchParams: Promise<{ range?: string }>;
 }) {
+  await requireAdmin();
+
   const params = await searchParams;
   const range = parseRange(params.range);
   const today = todayInSaoPaulo();
@@ -34,6 +40,7 @@ export default async function InsightsPage({
   const trendPoints = buildTrendSeries(historyRows);
   const annualPoints = buildAnnualSeries(annualAverages);
   const stats = computeSummaryStats(historyRows);
+  const categoryExtremes = computeCategoryExtremes(historyRows);
 
   return (
     <div className="mx-auto flex w-full max-w-md flex-1 flex-col gap-6 px-4 pt-8 pb-16 lg:max-w-5xl lg:px-10 lg:py-10">
@@ -42,6 +49,8 @@ export default async function InsightsPage({
       <PeriodFilter current={range} />
 
       <SummaryStats stats={stats} />
+
+      <CategoryExtremesCard extremes={categoryExtremes} />
 
       <PriceTrendChart points={trendPoints} />
 

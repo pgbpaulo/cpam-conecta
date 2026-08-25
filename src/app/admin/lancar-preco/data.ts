@@ -13,20 +13,49 @@ export async function getRecentDays(today: Date): Promise<RecentDay[]> {
 
   const windowStart = new Date(today);
   windowStart.setDate(windowStart.getDate() - (WINDOW_DAYS - 1));
+  const windowStartISO = toISODate(windowStart);
+  const todayISO = toISODate(today);
 
-  const { data, error } = await supabase
+  const { data: precoRows, error: precoError } = await supabase
     .from("precos_morango")
     .select("data")
-    .gte("data", toISODate(windowStart))
-    .lte("data", toISODate(today));
+    .gte("data", windowStartISO)
+    .lte("data", todayISO);
 
-  if (error) {
-    throw new Error(`Falha ao buscar dias com lançamento: ${error.message}`);
+  if (precoError) {
+    throw new Error(`Falha ao buscar dias com lançamento: ${precoError.message}`);
   }
 
-  const launchedDates = new Set((data ?? []).map((row: { data: string }) => row.data));
+  const { data: feriadoRows, error: feriadoError } = await supabase
+    .from("feriados")
+    .select("data")
+    .gte("data", windowStartISO)
+    .lte("data", todayISO);
 
-  return computeRecentDays(today, launchedDates, WINDOW_DAYS);
+  if (feriadoError) {
+    throw new Error(`Falha ao buscar feriados: ${feriadoError.message}`);
+  }
+
+  const launchedDates = new Set((precoRows ?? []).map((row: { data: string }) => row.data));
+  const holidayDates = new Set((feriadoRows ?? []).map((row: { data: string }) => row.data));
+
+  return computeRecentDays(today, launchedDates, holidayDates, WINDOW_DAYS);
+}
+
+export async function getDayHoliday(date: string): Promise<boolean> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("feriados")
+    .select("data")
+    .eq("data", date)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Falha ao buscar feriado: ${error.message}`);
+  }
+
+  return data !== null;
 }
 
 export async function getDayPrices(

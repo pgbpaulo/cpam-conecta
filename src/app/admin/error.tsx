@@ -30,7 +30,7 @@ export default function AdminError({
       <button
         type="button"
         onClick={() => reset()}
-        className="inline-flex h-11 items-center gap-2 rounded-[24px] bg-primary px-6 text-[16px] font-semibold text-on-primary transition-colors hover:bg-primary-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
+        className="inline-flex h-11 cursor-pointer items-center gap-2 rounded-[24px] bg-primary px-6 text-[16px] font-semibold text-on-primary transition-colors hover:bg-primary-active focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink"
       >
         <RotateCcw className="size-4" aria-hidden />
         Tentar novamente

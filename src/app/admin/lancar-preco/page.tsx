@@ -1,6 +1,7 @@
-import { getRecentDays, getDayPrices } from "./data";
+import { getRecentDays, getDayPrices, getDayHoliday } from "./data";
 import { RecentDaysList } from "./recent-days-list";
 import { StrawberryPriceForm } from "./strawberry-price-form";
+import { UnsavedChangesProvider } from "./unsaved-changes-context";
 import { toISODate, todayInSaoPaulo } from "@/lib/recent-days";
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -15,9 +16,10 @@ export default async function LancarPrecoPage({
   const selectedDate =
     params.data && ISO_DATE_PATTERN.test(params.data) ? params.data : toISODate(today);
 
-  const [days, initialValues] = await Promise.all([
+  const [days, initialValues, isHoliday] = await Promise.all([
     getRecentDays(today),
     getDayPrices(selectedDate),
+    getDayHoliday(selectedDate),
   ]);
 
   return (
@@ -32,14 +34,21 @@ export default async function LancarPrecoPage({
           card-content (DESIGN.md): white, rounded-[24px], no border — the
           canvas/canvas-soft contrast against the page IS the elevation, at
           every breakpoint, not just desktop. */}
-      <div className="flex flex-1 flex-col gap-6 lg:flex-row lg:items-start">
-        <div className="rounded-[24px] bg-canvas py-2 lg:w-80 lg:shrink-0">
-          <RecentDaysList days={days} selectedDate={selectedDate} />
+      <UnsavedChangesProvider>
+        <div className="flex flex-1 flex-col gap-6 lg:flex-row lg:items-start">
+          <div className="rounded-[24px] bg-canvas py-2 lg:w-80 lg:shrink-0">
+            <RecentDaysList days={days} selectedDate={selectedDate} />
+          </div>
+          <div className="rounded-[24px] bg-canvas p-6 lg:flex-1 lg:p-8">
+            <StrawberryPriceForm
+              key={selectedDate}
+              date={selectedDate}
+              initialValues={initialValues}
+              isHoliday={isHoliday}
+            />
+          </div>
         </div>
-        <div className="rounded-[24px] bg-canvas p-6 lg:flex-1 lg:p-8">
-          <StrawberryPriceForm key={selectedDate} date={selectedDate} initialValues={initialValues} />
-        </div>
-      </div>
+      </UnsavedChangesProvider>
     </div>
   );
 }

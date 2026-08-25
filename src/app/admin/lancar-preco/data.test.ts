@@ -6,7 +6,7 @@ vi.mock("@/lib/supabase/server", () => ({
   createSupabaseServerClient: () => ({ from: fromMock }),
 }));
 
-import { getRecentDays, getDayPrices } from "./data";
+import { getRecentDays, getDayPrices, getDayHoliday } from "./data";
 
 function selectBuilder(result: { data: unknown; error: unknown }) {
   const builder = {
@@ -18,11 +18,22 @@ function selectBuilder(result: { data: unknown; error: unknown }) {
   return builder;
 }
 
+function maybeSingleBuilder(result: { data: unknown; error: unknown }) {
+  const builder = {
+    select: vi.fn(() => builder),
+    eq: vi.fn(() => builder),
+    maybeSingle: vi.fn(() => Promise.resolve(result)),
+  };
+  return builder;
+}
+
 describe("getRecentDays", () => {
   beforeEach(() => fromMock.mockReset());
 
-  it("marks dates present in the query result as lancado", async () => {
-    fromMock.mockReturnValue(selectBuilder({ data: [{ data: "2026-08-20" }], error: null }));
+  it("marks dates present in the precos query result as lancado", async () => {
+    fromMock
+      .mockReturnValueOnce(selectBuilder({ data: [{ data: "2026-08-20" }], error: null }))
+      .mockReturnValueOnce(selectBuilder({ data: [], error: null }));
 
     const days = await getRecentDays(new Date("2026-08-21T12:00:00"));
 
@@ -31,12 +42,60 @@ describe("getRecentDays", () => {
     expect(days.find((d) => d.date === "2026-08-19")?.status).toBe("sem-lancamento");
   });
 
-  it("throws when Supabase returns an error", async () => {
-    fromMock.mockReturnValue(selectBuilder({ data: null, error: { message: "boom" } }));
+  it("marks dates present in the feriados query result as feriado", async () => {
+    fromMock
+      .mockReturnValueOnce(selectBuilder({ data: [], error: null }))
+      .mockReturnValueOnce(selectBuilder({ data: [{ data: "2026-08-19" }], error: null }));
+
+    const days = await getRecentDays(new Date("2026-08-21T12:00:00"));
+
+    expect(fromMock).toHaveBeenCalledWith("feriados");
+    expect(days.find((d) => d.date === "2026-08-19")?.status).toBe("feriado");
+  });
+
+  it("throws when the precos query returns an error", async () => {
+    fromMock.mockReturnValueOnce(selectBuilder({ data: null, error: { message: "boom" } }));
 
     await expect(getRecentDays(new Date("2026-08-21T12:00:00"))).rejects.toThrow(
       "Falha ao buscar dias com lançamento"
     );
+  });
+
+  it("throws when the feriados query returns an error", async () => {
+    fromMock
+      .mockReturnValueOnce(selectBuilder({ data: [], error: null }))
+      .mockReturnValueOnce(selectBuilder({ data: null, error: { message: "boom" } }));
+
+    await expect(getRecentDays(new Date("2026-08-21T12:00:00"))).rejects.toThrow(
+      "Falha ao buscar feriados"
+    );
+  });
+});
+
+describe("getDayHoliday", () => {
+  beforeEach(() => fromMock.mockReset());
+
+  it("returns true when a feriado row exists for the date", async () => {
+    fromMock.mockReturnValue(maybeSingleBuilder({ data: { data: "2026-08-21" }, error: null }));
+
+    const isHoliday = await getDayHoliday("2026-08-21");
+
+    expect(fromMock).toHaveBeenCalledWith("feriados");
+    expect(isHoliday).toBe(true);
+  });
+
+  it("returns false when no feriado row exists for the date", async () => {
+    fromMock.mockReturnValue(maybeSingleBuilder({ data: null, error: null }));
+
+    const isHoliday = await getDayHoliday("2026-08-21");
+
+    expect(isHoliday).toBe(false);
+  });
+
+  it("throws when Supabase returns an error", async () => {
+    fromMock.mockReturnValue(maybeSingleBuilder({ data: null, error: { message: "boom" } }));
+
+    await expect(getDayHoliday("2026-08-21")).rejects.toThrow("Falha ao buscar feriado");
   });
 });
 

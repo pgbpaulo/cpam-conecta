@@ -10,44 +10,32 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-  type DefaultLegendContentProps,
-  type LegendPayload,
   type SymbolType,
   type TooltipContentProps,
 } from "recharts";
 
 import { STRAWBERRY_CATEGORIES, type StrawberryCategory } from "@/lib/validation/strawberry-price";
+import { STRAWBERRY_CATEGORY_COLOR } from "@/lib/strawberry-category-colors";
 import type { TrendPoint } from "./trend-series";
 
 // One line per category (DESIGN.md `card-content`: white, rounded-[24px], no
-// border — canvas/canvas-soft contrast IS the elevation). Categorical colors
-// come from the `dataviz` skill's documented default palette
-// (references/palette.md), slots 1-4 in fixed order, assigned to
-// STRAWBERRY_CATEGORIES in its own fixed order — never
-// {colors.primary} (#9fe870), which DESIGN.md reserves exclusively for CTAs.
-// Validated colorblind-safe with `validate_palette.js` on this exact 4-hex
-// set for a line chart's adjacent-pairs check (worst adjacent CVD ΔE 9.1,
-// normal-vision floor 22.9 — both clear the gates). Two of the four slots
-// (aqua, yellow) sit under 3:1 contrast against the white card surface, and
-// hue alone is a colorblind reader's only channel while scanning a live
-// chart (the legend/tooltip text doesn't help distinguish two already-drawn
-// lines at a glance). So every category also carries a distinct
-// `strokeDasharray`, visible along the whole line — a continuous secondary
-// encoding, per the skill's secondary-encoding allowance — and the legend
-// swatch pairs that same dash with a distinct shape so the key stays
+// border — canvas/canvas-soft contrast IS the elevation). Colors come from
+// STRAWBERRY_CATEGORY_COLOR (see that module for the colorblind-safety
+// rationale) — the same mapping the price-entry form uses, so a category
+// reads as the same color everywhere in the app, not just here. Two of the
+// four slots (aqua, yellow) sit under 3:1 contrast against the white card
+// surface, and hue alone is a colorblind reader's only channel while
+// scanning a live chart (the legend/tooltip text doesn't help distinguish
+// two already-drawn lines at a glance). So every category also carries a
+// distinct `strokeDasharray`, visible along the whole line — a continuous
+// secondary encoding, per the skill's secondary-encoding allowance — and the
+// legend swatch pairs that same dash with a distinct shape so the key stays
 // learnable even without per-point markers drawn on the chart itself.
-const LINE_STYLE: Record<
-  StrawberryCategory,
-  { color: string; dash?: string; shape: SymbolType }
-> = {
-  Velho: { color: "#2a78d6", shape: "circle" }, // solid line
-  Bom: { color: "#eb6834", dash: "8 4", shape: "square" }, // dashed
-  "Safra Nova Top": { color: "#1baf7a", dash: "1 4", shape: "diamond" }, // dotted
-  "Safra Nova Diferenciado": {
-    color: "#eda100",
-    dash: "10 3 2 3",
-    shape: "triangle",
-  }, // dash-dot
+const LINE_STYLE: Record<StrawberryCategory, { dash?: string; shape: SymbolType }> = {
+  Velho: { shape: "circle" }, // solid line
+  Bom: { dash: "8 4", shape: "square" }, // dashed
+  "Safra Nova Top": { dash: "1 4", shape: "diamond" }, // dotted
+  "Safra Nova Diferenciado": { dash: "10 3 2 3", shape: "triangle" }, // dash-dot
 };
 
 const AXIS_DATE_FORMATTER = new Intl.DateTimeFormat("pt-BR", {
@@ -91,6 +79,7 @@ function formatCurrency(value: number): string {
 
 function makeActiveDot(category: StrawberryCategory) {
   const style = LINE_STYLE[category];
+  const color = STRAWBERRY_CATEGORY_COLOR[category];
 
   return function CategoryActiveDot(props: { cx?: number; cy?: number }) {
     const { cx, cy } = props;
@@ -104,7 +93,7 @@ function makeActiveDot(category: StrawberryCategory) {
         cy={cy}
         type={style.shape}
         size={110}
-        fill={style.color}
+        fill={color}
         stroke="var(--canvas)"
         strokeWidth={2}
       />
@@ -117,6 +106,7 @@ function makeActiveDot(category: StrawberryCategory) {
 // just its color.
 function LineKey({ category }: { category: StrawberryCategory }) {
   const style = LINE_STYLE[category];
+  const color = STRAWBERRY_CATEGORY_COLOR[category];
 
   return (
     <svg width="28" height="12" viewBox="0 0 28 12" aria-hidden className="shrink-0">
@@ -125,12 +115,12 @@ function LineKey({ category }: { category: StrawberryCategory }) {
         y1={6}
         x2={28}
         y2={6}
-        stroke={style.color}
+        stroke={color}
         strokeWidth={2}
         strokeDasharray={style.dash}
         strokeLinecap="round"
       />
-      <Symbols cx={14} cy={6} type={style.shape} size={40} fill={style.color} />
+      <Symbols cx={14} cy={6} type={style.shape} size={40} fill={color} />
     </svg>
   );
 }
@@ -173,22 +163,18 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
 
 // Custom legend: the same dash + shape swatch as the chart lines and the
 // tooltip (never a colored box or colored text) — identity rides the
-// swatch, not the label.
-function ChartLegend({ payload }: DefaultLegendContentProps) {
-  const entries = (payload ?? []) as LegendPayload[];
-  if (entries.length === 0) {
-    return null;
-  }
-
+// swatch, not the label. Built directly from STRAWBERRY_CATEGORIES rather
+// than recharts' auto-generated `payload`: that payload does not reliably
+// preserve the <Line> render order (it renders alphabetically in practice),
+// which broke the "legend order matches in-chart bar order" accessibility
+// guarantee this file's own comments above describe.
+function ChartLegend() {
   return (
     <ul className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2">
-      {entries.map((entry) => (
-        <li
-          key={String(entry.dataKey ?? entry.value)}
-          className="flex items-center gap-2 text-sm text-body"
-        >
-          <LineKey category={entry.value as StrawberryCategory} />
-          {entry.value}
+      {STRAWBERRY_CATEGORIES.map((category) => (
+        <li key={category} className="flex items-center gap-2 text-sm text-body">
+          <LineKey category={category} />
+          {category}
         </li>
       ))}
     </ul>
@@ -218,12 +204,19 @@ export function PriceTrendChart({ points }: { points: TrendPoint[] }) {
       <ResponsiveContainer width="100%" height={360}>
         <LineChart data={points} margin={{ top: 8, right: 16, left: 0, bottom: 0 }}>
           <CartesianGrid vertical={false} stroke="var(--canvas-soft)" />
+          {/* At 90 days or "Tudo", one tick per data point crowds into an
+              unreadable row. `minTickGap` (in px, generous for a "DD/MM"
+              label) makes recharts' own collision-avoidance skip enough
+              ticks to fit — responsive to the actual rendered width, so it
+              stays legible on mobile too, not just desktop. */}
           <XAxis
             dataKey="data"
             tickFormatter={formatAxisDate}
             tick={{ fill: "var(--mute)", fontSize: 12 }}
             tickLine={false}
             axisLine={{ stroke: "var(--canvas-soft)" }}
+            interval="preserveStartEnd"
+            minTickGap={48}
           />
           <YAxis
             tickFormatter={(value: number) => AXIS_CURRENCY_FORMATTER.format(value)}
@@ -243,7 +236,7 @@ export function PriceTrendChart({ points }: { points: TrendPoint[] }) {
               type="monotone"
               dataKey={category}
               name={category}
-              stroke={LINE_STYLE[category].color}
+              stroke={STRAWBERRY_CATEGORY_COLOR[category]}
               strokeWidth={2}
               strokeDasharray={LINE_STYLE[category].dash}
               dot={false}

@@ -26,6 +26,8 @@ export type SavePricesResult =
     }
   | { status: "error"; message: string };
 
+export type HolidayActionResult = { status: "success" } | { status: "error"; message: string };
+
 const CATEGORY_SET = new Set<string>(STRAWBERRY_CATEGORIES);
 
 export async function savePrices(
@@ -71,6 +73,23 @@ export async function savePrices(
     redirect("/login");
   }
 
+  const { data: holidayRow, error: holidayError } = await supabase
+    .from("feriados")
+    .select("data")
+    .eq("data", data)
+    .maybeSingle();
+
+  if (holidayError) {
+    return { status: "error", message: "Não foi possível salvar. Tente novamente." };
+  }
+
+  if (holidayRow) {
+    return {
+      status: "validation-error",
+      message: "Esse dia está marcado como feriado; desmarque antes de lançar preços.",
+    };
+  }
+
   const { data: existingRows, error: existingError } = await supabase
     .from("precos_morango")
     .select("categoria")
@@ -110,4 +129,66 @@ export async function savePrices(
   revalidatePath("/admin/lancar-preco");
 
   return { status: "success", savedAt: new Date().toISOString(), entries };
+}
+
+export async function markHoliday(date: string): Promise<HolidayActionResult> {
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { data: existingRows, error: existingError } = await supabase
+    .from("precos_morango")
+    .select("categoria")
+    .eq("data", date);
+
+  if (existingError) {
+    return { status: "error", message: "Não foi possível marcar como feriado. Tente novamente." };
+  }
+
+  if (existingRows && existingRows.length > 0) {
+    return {
+      status: "error",
+      message: "Não é possível marcar como feriado: já existem preços lançados para esse dia.",
+    };
+  }
+
+  const { error: insertError } = await supabase
+    .from("feriados")
+    .insert({ data: date, marcado_por: user.id });
+
+  if (insertError) {
+    return { status: "error", message: "Não foi possível marcar como feriado. Tente novamente." };
+  }
+
+  revalidatePath("/admin/lancar-preco");
+
+  return { status: "success" };
+}
+
+export async function unmarkHoliday(date: string): Promise<HolidayActionResult> {
+  const supabase = await createSupabaseServerClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
+
+  const { error } = await supabase.from("feriados").delete().eq("data", date);
+
+  if (error) {
+    return { status: "error", message: "Não foi possível desmarcar o feriado. Tente novamente." };
+  }
+
+  revalidatePath("/admin/lancar-preco");
+
+  return { status: "success" };
 }

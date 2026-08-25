@@ -9,26 +9,17 @@ import {
   XAxis,
   YAxis,
   ResponsiveContainer,
-  type DefaultLegendContentProps,
-  type LegendPayload,
   type TooltipContentProps,
 } from "recharts";
 
 import { STRAWBERRY_CATEGORIES, type StrawberryCategory } from "@/lib/validation/strawberry-price";
+import { STRAWBERRY_CATEGORY_COLOR } from "@/lib/strawberry-category-colors";
 import type { AnnualSeriesPoint } from "./annual-series";
 
 // One bar per category (DESIGN.md `card-content`: white, rounded-[24px], no
-// border). Same categorical palette and category→color mapping as
-// `price-trend-chart.tsx` (Task 6) — slots 1-4 of the `dataviz` skill's
-// documented default palette, in `STRAWBERRY_CATEGORIES` order — reused
-// verbatim so the two charts on this page read as one system. Never
-// {colors.primary} (#9fe870), which DESIGN.md reserves exclusively for CTAs.
-const BAR_COLOR: Record<StrawberryCategory, string> = {
-  Velho: "#2a78d6",
-  Bom: "#eb6834",
-  "Safra Nova Top": "#1baf7a",
-  "Safra Nova Diferenciado": "#eda100",
-};
+// border). Colors come from STRAWBERRY_CATEGORY_COLOR — the same mapping
+// `price-trend-chart.tsx` and the price-entry form use, so a category reads
+// as the same color everywhere in the app, not just on this page.
 
 // Accessibility call (deliberately made, not skipped): Task 6's line chart
 // needed strokeDasharray + marker shape as a secondary encoding because its
@@ -70,7 +61,7 @@ function formatCurrency(value: number): string {
 function CategorySwatch({ category }: { category: StrawberryCategory }) {
   return (
     <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden className="shrink-0">
-      <rect width="12" height="12" rx="3" fill={BAR_COLOR[category]} />
+      <rect width="12" height="12" rx="3" fill={STRAWBERRY_CATEGORY_COLOR[category]} />
     </svg>
   );
 }
@@ -110,22 +101,17 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps) {
 
 // Custom legend: same swatch as the tooltip, ordered to match the in-chart
 // bar order so "position in the legend" and "position in the group" agree —
-// that agreement is part of the accessibility argument above.
-function ChartLegend({ payload }: DefaultLegendContentProps) {
-  const entries = (payload ?? []) as LegendPayload[];
-  if (entries.length === 0) {
-    return null;
-  }
-
+// that agreement is part of the accessibility argument above. Built
+// directly from CATEGORY_ORDER rather than recharts' auto-generated
+// `payload`: that payload does not reliably preserve the <Bar> render order
+// (it renders alphabetically in practice), which broke this exact guarantee.
+function ChartLegend() {
   return (
     <ul className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2">
-      {entries.map((entry) => (
-        <li
-          key={String(entry.dataKey ?? entry.value)}
-          className="flex items-center gap-2 text-sm text-body"
-        >
-          <CategorySwatch category={entry.value as StrawberryCategory} />
-          {entry.value}
+      {CATEGORY_ORDER.map((category) => (
+        <li key={category} className="flex items-center gap-2 text-sm text-body">
+          <CategorySwatch category={category} />
+          {category}
         </li>
       ))}
     </ul>
@@ -178,7 +164,7 @@ export function AnnualAveragesChart({ points }: { points: AnnualSeriesPoint[] })
               key={category}
               dataKey={category}
               name={category}
-              fill={BAR_COLOR[category]}
+              fill={STRAWBERRY_CATEGORY_COLOR[category]}
               radius={[4, 4, 0, 0]}
               maxBarSize={24}
               isAnimationActive={false}

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import { cn } from "@/lib/utils";
 import { INSIGHTS_RANGES, type InsightsRange } from "./date-range";
+import { PeriodFilterPendingHint } from "./period-filter-pending-hint";
 
 const RANGE_LABELS: Record<InsightsRange, string> = {
   "30d": "30 dias",
@@ -41,7 +42,10 @@ export function PeriodFilter({ current }: { current: InsightsRange }) {
                 : "text-body hover:text-ink"
             )}
           >
-            {RANGE_LABELS[range]}
+            <span className="inline-flex items-center justify-center gap-1.5">
+              {RANGE_LABELS[range]}
+              <PeriodFilterPendingHint />
+            </span>
           </Link>
         );
       })}

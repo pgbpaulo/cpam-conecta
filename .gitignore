@@ -42,3 +42,6 @@ next-env.d.ts
 
 # superpowers SDD workspace
 .superpowers/
+
+# graphify knowledge-graph cache
+/graphify-out/
